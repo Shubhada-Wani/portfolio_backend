@@ -4,28 +4,29 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # allows Netlify frontend to call API
+# Allow your Netlify frontend to call this API
+CORS(app, origins=["https://your-frontend.netlify.app"])  # replace with your Netlify URL
 
 @app.route("/send_message", methods=["POST"])
 def send_message():
-    data = request.get_json()
-    name = data.get("name")
-    email = data.get("email")
-    subject = data.get("subject")
-    message = data.get("message")
-
-    if not name or not email or not message:
-        return jsonify({"message": "All fields are required"}), 400
-
-    EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-
     try:
+        data = request.get_json()
+        name = data.get("name")
+        email = data.get("email")
+        subject = data.get("subject")
+        message = data.get("message")
+
+        if not name or not email or not message:
+            return jsonify({"message": "All fields are required"}), 400
+
+        EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
+        EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+
+        if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+            return jsonify({"message": "Email credentials not set"}), 500
+
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = EMAIL_ADDRESS
@@ -38,12 +39,14 @@ def send_message():
         server.send_message(msg)
         server.quit()
 
-        return jsonify({"message": "Message sent successfully!"})
+        return jsonify({"message": "Message sent successfully!"}), 200
+
     except Exception as e:
         print("Error:", e)
-        return jsonify({"message": f"Something went wrong: {str(e)}"}), 500
+        return jsonify({"message": "Something went wrong."}), 500
+
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))  # Render provides the PORT env
+    # Use Render's PORT env variable or default to 5000
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

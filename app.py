@@ -7,7 +7,8 @@ from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 # Allow your Netlify frontend to call this API
-CORS(app, origins=["https://shubhada-portfolio.netlify.app/"])  # replace with your Netlify URL
+CORS(app, origins=["https://shubhada-portfolio.netlify.app"], methods=["POST"], supports_credentials=True)
+  # replace with your Netlify URL
 
 @app.route("/send_message", methods=["POST"])
 def send_message():
@@ -44,6 +45,14 @@ def send_message():
     except Exception as e:
         print("Error:", e)
         return jsonify({"message": "Something went wrong."}), 500
+    
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", "https://shubhada-portfolio.netlify.app")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    return response
+
 
 
 if __name__ == "__main__":
